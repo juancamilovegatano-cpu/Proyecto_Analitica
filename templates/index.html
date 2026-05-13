@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Predicción de Insuficiencia Cardíaca</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Fuente -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+          rel="stylesheet">
+
+    <style>
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #141e30, #243b55);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            animation: fadeIn 0.4s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            transition: 0.3s;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            background: #dfe6e9;
+            border-radius: 10px 10px 0 0;
+            margin: 5px;
+            font-weight: 600;
+        }
+
+        .tab a {
+            text-decoration: none;
+            color: black;
+        }
+
+        .tab.active {
+            background: white;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        input,
+        select {
+
+            padding: 12px;
+
+            border-radius: 10px;
+
+            border: 1px solid #ccc;
+
+            width: 100%;
+
+            box-sizing: border-box;
+
+            font-size: 14px;
+        }
+
+        button {
+
+            margin-top: 20px;
+
+            padding: 14px;
+
+            border: none;
+
+            border-radius: 10px;
+
+            background: #4facfe;
+
+            color: white;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            width: 100%;
+
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #00c6ff;
+        }
+
+        .result {
+
+            margin-top: 20px;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            font-weight: bold;
+        }
+
+        .ok {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .bad {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .error {
+
+            background: #ffe6e6;
+
+            color: #c0392b;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            margin-top: 15px;
+
+            font-weight: bold;
+        }
+
+        table {
+
+            width: 100%;
+
+            margin-top: 20px;
+
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+
+            border: 1px solid #ccc;
+
+            padding: 12px;
+
+            text-align: center;
+        }
+
+        th {
+            background: #f1f1f1;
+        }
+
+        pre {
+
+            background: #111;
+
+            color: #0f0;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            overflow-x: auto;
+        }
+
+        .info-box {
+
+            background: #eef6ff;
+
+            padding: 15px;
+
+            border-radius: 10px;
+
+            margin-top: 20px;
+        }
+
+        .accuracy-box {
+
+            margin-top: 20px;
+
+            background: linear-gradient(135deg, #00c853, #64dd17);
+
+            color: white;
+
+            padding: 25px;
+
+            border-radius: 15px;
+
+            text-align: center;
+
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .accuracy-box h2 {
+
+            margin: 0;
+
+            font-size: 45px;
+        }
+
+        .accuracy-box p {
+
+            margin-top: 10px;
+
+            font-size: 18px;
+        }
+
+        .cm-good {
+
+            background: #c8e6c9;
+
+            color: #1b5e20;
+
+            font-weight: bold;
+        }
+
+        .cm-bad {
+
+            background: #ffcdd2;
+
+            color: #b71c1c;
+
+            font-weight: bold;
+        }
+
+        .metric-table {
+
+            width: 100%;
+
+            margin-top: 20px;
+
+            border-collapse: collapse;
+        }
+
+        .metric-table th {
+
+            background: #1976d2;
+
+            color: white;
+
+            padding: 12px;
+        }
+
+        .metric-table td {
+
+            padding: 12px;
+
+            border: 1px solid #ddd;
+        }
+
+        .metric-table tr:nth-child(even) {
+
+            background: #f5f5f5;
+        }
+
+        @keyframes fadeIn {
+
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>
+        💓 Predicción de Supervivencia/Fallecimiento en Insuficiencia Cardíaca
+    </h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+
+        <div class="tab {{ 'active' if tab=='individual' else '' }}">
+            <a href="/?tab=individual">
+                Predicción Individual
+            </a>
+        </div>
+
+        <div class="tab {{ 'active' if tab=='lotes' else '' }}">
+            <a href="/?tab=lotes">
+                Predicción por Lotes
+            </a>
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <!-- ERROR -->
+        {% if error %}
+
+            <div class="error">
+                {{ error }}
+            </div>
+
+        {% endif %}
+
+        <!-- ================================================= -->
+        <!-- PREDICCIÓN INDIVIDUAL -->
+        <!-- ================================================= -->
+        {% if tab == 'individual' %}
+
+        <form method="POST" action="/predict">
+
+            <label>
+                <strong>Modelo:</strong>
+            </label>
+
+            <select name="modelo">
+
+                <option value="logreg"
+                    {% if modelo == 'logreg' %}selected{% endif %}>
+                    Regresión Logística
+                </option>
+
+                <option value="mlp"
+                    {% if modelo == 'mlp' %}selected{% endif %}>
+                    Red Neuronal
+                </option>
+
+            </select>
+
+            <div class="form-grid">
+
+                <input type="number"
+                       name="age"
+                       value="{{ age or '' }}"
+                       placeholder="Edad"
+                       required>
+
+                <input type="number"
+                       name="anaemia"
+                       value="{{ anaemia or '' }}"
+                       placeholder="Anemia (0/1)"
+                       required>
+
+                <input type="number"
+                       name="creatinine_phosphokinase"
+                       value="{{ creatinine_phosphokinase or '' }}"
+                       placeholder="CPK"
+                       required>
+
+                <input type="number"
+                       name="diabetes"
+                       value="{{ diabetes or '' }}"
+                       placeholder="Diabetes (0/1)"
+                       required>
+
+                <input type="number"
+                       name="ejection_fraction"
+                       value="{{ ejection_fraction or '' }}"
+                       placeholder="Fracción de eyección (%)"
+                       required>
+
+                <input type="number"
+                       name="high_blood_pressure"
+                       value="{{ high_blood_pressure or '' }}"
+                       placeholder="Hipertensión (0/1)"
+                       required>
+
+                <input type="number"
+                       name="platelets"
+                       value="{{ platelets or '' }}"
+                       placeholder="Plaquetas"
+                       required>
+
+                <input type="number"
+                       step="any"
+                       name="serum_creatinine"
+                       value="{{ serum_creatinine or '' }}"
+                       placeholder="Creatinina sérica"
+                       required>
+
+                <input type="number"
+                       name="serum_sodium"
+                       value="{{ serum_sodium or '' }}"
+                       placeholder="Sodio sérico"
+                       required>
+
+                <input type="number"
+                       name="sex"
+                       value="{{ sex or '' }}"
+                       placeholder="Sexo (1=Hombre)"
+                       required>
+
+                <input type="number"
+                       name="smoking"
+                       value="{{ smoking or '' }}"
+                       placeholder="Fumador (0/1)"
+                       required>
+
+                <input type="number"
+                       name="time"
+                       value="{{ time or '' }}"
+                       placeholder="Tiempo de seguimiento (días)"
+                       required>
+
+            </div>
+
+            <button type="submit">
+                Predecir
+            </button>
+
+        </form>
+
+        <!-- RESULTADO -->
+        {% if pred_individual is defined and pred_individual is not none %}
+
+            <div class="result {{ 'bad' if pred_individual == 1 else 'ok' }}">
+
+                {% if pred_individual == 1 %}
+
+                    ⚠️ Alto riesgo de fallecimiento
+
+                {% else %}
+
+                    ✅ Bajo riesgo / supervivencia
+
+                {% endif %}
+
+            </div>
+
+        {% endif %}
+
+        {% endif %}
+
+        <!-- ================================================= -->
+        <!-- PREDICCIÓN POR LOTES -->
+        <!-- ================================================= -->
+        {% if tab == 'lotes' %}
+
+        <form method="POST"
+              action="/batch"
+              enctype="multipart/form-data">
+
+            <label>
+                <strong>Modelo:</strong>
+            </label>
+
+            <select name="modelo_batch">
+
+                <option value="logreg"
+                    {% if modelo == 'logreg' %}selected{% endif %}>
+                    Regresión Logística
+                </option>
+
+                <option value="mlp"
+                    {% if modelo == 'mlp' %}selected{% endif %}>
+                    Red Neuronal
+                </option>
+
+            </select>
+
+            <div class="info-box">
+
+                <strong>
+                    Formato esperado del CSV:
+                </strong>
+
+                <p>
+                    age, anaemia, creatinine_phosphokinase,
+                    diabetes, ejection_fraction...
+                </p>
+
+            </div>
+
+            <input type="file"
+                   name="file"
+                   accept=".csv"
+                   required>
+
+            <button type="submit">
+                Procesar CSV
+            </button>
+
+        </form>
+
+        <!-- ACCURACY -->
+        {% if accuracy %}
+
+        <div class="accuracy-box">
+
+            <h2>{{ accuracy }}%</h2>
+
+            <p>
+                Accuracy del Modelo
+            </p>
+
+        </div>
+
+        {% endif %}
+
+        <!-- INFO -->
+        {% if info_msg %}
+
+            <div class="result ok">
+                {{ info_msg|safe }}
+            </div>
+
+        {% endif %}
+
+        <!-- MATRIZ -->
+        {% if matriz %}
+
+        <h3>Matriz de Confusión</h3>
+
+        <table>
+
+            <tr>
+                <th></th>
+                <th>Pred: Sobrevive</th>
+                <th>Pred: Fallece</th>
+            </tr>
+
+            <tr>
+
+                <th>Real: Sobrevive</th>
+
+                <td class="cm-good">
+                    {{ matriz[0][0] }}
+                </td>
+
+                <td class="cm-bad">
+                    {{ matriz[0][1] }}
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <th>Real: Fallece</th>
+
+                <td class="cm-bad">
+                    {{ matriz[1][0] }}
+                </td>
+
+                <td class="cm-good">
+                    {{ matriz[1][1] }}
+                </td>
+
+            </tr>
+
+        </table>
+
+        {% endif %}
+
+        <!-- MÉTRICAS -->
+        {% if reporte %}
+
+        <h3>Métricas del Modelo</h3>
+
+        <table class="metric-table">
+
+            <tr>
+                <th>Clase</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-Score</th>
+                <th>Support</th>
+            </tr>
+
+            {% for clase, metricas in reporte.items() %}
+
+                {% if clase in ['0', '1'] %}
+
+                <tr>
+
+                    <td>
+
+                        {% if clase == '0' %}
+
+                            Sobrevive
+
+                        {% else %}
+
+                            Fallece
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+                        {{ "%.2f"|format(metricas.precision) }}
+                    </td>
+
+                    <td>
+                        {{ "%.2f"|format(metricas.recall) }}
+                    </td>
+
+                    <td>
+                        {{ "%.2f"|format(metricas['f1-score']) }}
+                    </td>
+
+                    <td>
+                        {{ metricas.support }}
+                    </td>
+
+                </tr>
+
+                {% endif %}
+
+            {% endfor %}
+
+        </table>
+
+        {% endif %}
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+</html>
